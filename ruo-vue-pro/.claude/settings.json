@@ -1,0 +1,26 @@
+{
+  "permissions": {
+    "allow": [
+      {
+        "type": "command",
+        "command": "mvn compile"
+      },
+      {
+        "type": "command",
+        "command": "mvn test"
+      },
+      {
+        "type": "command",
+        "command": "find"
+      },
+      {
+        "type": "command",
+        "command": "ls"
+      }
+    ]
+  },
+  "env": {
+    "JAVA_HOME": "${env:JAVA_HOME}",
+    "SPRING_PROFILES_ACTIVE": "dev"
+  }
+}

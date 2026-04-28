@@ -8,7 +8,7 @@ trigger: 当用户要求审查代码、检查代码质量、审计模块、或�
 
 审查代码是否符合芋道 (Yudao) RuoYi-Vue-Pro 框架规范和最佳实践。
 
-**共享规范**: 阅读 [CLAUDE.md](../../CLAUDE.md) 获取完整的项目级规则。
+**共享规范**: 阅读 [CLAUDE.md]获取完整的项目级规则。
 
 ## TRIGGER
 
