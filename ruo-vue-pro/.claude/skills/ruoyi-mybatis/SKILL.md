@@ -1,44 +1,50 @@
 ---
 name: ruoyi-mybatis
-description: Guide MyBatis-Plus data access patterns for RuoYi-Vue-Pro including LambdaQueryWrapperX, BaseMapperX, pagination, joins, and type handlers
-trigger: When the user works with database queries, MyBatis-Plus, Mapper methods, complex conditions, multi-table joins, or says "写查询", "数据库操作", "Mapper"
+description: 芋道 RuoYi-Vue-Pro 项目 MyBatis-Plus 数据访问模式指南：LambdaQueryWrapperX 条件查询、BaseMapperX 操作、分页、多表联查、类型处理器
+trigger: 当用户编写数据库查询、操作 Mapper 方法、编写复杂条件查询、多表联查、或提到 "写查询"、"数据库操作"、"Mapper"、"分页查询"
 ---
 
 # RuoYi MyBatis-Plus Guide
 
-Data access patterns for the 芋道 (Yudao) RuoYi-Vue-Pro framework.
+芋道 (Yudao) RuoYi-Vue-Pro 项目的数据访问模式参考。
 
-## BaseMapperX Methods
+**共享规范**: 阅读 [CLAUDE.md](../../CLAUDE.md) 获取项目级 Mapper/DO 规范。
 
-`BaseMapperX<T>` extends MyBatis-Plus-Join's `MPJBaseMapper<T>` and provides:
+## TRIGGER
 
-### Single Entity Operations
+- 用户需要编写数据库查询方法
+- 需要条件分页、批量操作、多表联查
+- 提到 "写查询"、"数据库操作"、"Mapper 方法"
 
-| Method | Description |
-|--------|-------------|
-| `insert(T)` | Insert single record |
-| `insertBatch(Collection<T>)` | Batch insert |
-| `insertBatch(Collection<T>, int batchSize)` | Batch insert with custom size |
-| `updateById(T)` | Update by ID |
-| `update(T, Wrapper<T>)` | Update by condition |
-| `updateBatch(Collection<T>)` | Batch update |
-| `updateBatch(Collection<T>, int batchSize)` | Batch update with custom size |
-| `deleteById(Long)` | Delete by ID (logical) |
-| `deleteByIds(Collection<Long>)` | Batch delete (logical) |
-| `delete(Wrapper<T>)` | Delete by condition |
-| `selectById(Long)` | Get by ID |
-| `selectBatchIds(Collection<Long>)` | Batch get by IDs |
-| `selectOne(Wrapper<T>)` | Get single record |
-| `selectCount(Wrapper<T>)` | Count by condition |
-| `selectList(Wrapper<T>)` | List by condition |
-| `selectPage(PageParam, Wrapper<T>)` | Paginated query |
+## SKIP
 
-### LambdaQueryWrapperX — Condition Methods
+- 纯 Redis 缓存操作
+- 已有现成方法只需调用
 
-All `*IfPresent` methods skip the condition when the value is null/empty:
+## BaseMapperX 操作表
+
+`BaseMapperX<T>` 继承 MyBatis-Plus-Join 的 `MPJBaseMapper<T>`，提供以下方法：
+
+| 方法 | 说明 |
+|------|------|
+| `insert(T)` | 单条插入 |
+| `insertBatch(Collection<T>)` | 批量插入 |
+| `updateById(T)` | 按 ID 更新 |
+| `updateBatch(Collection<T>)` | 批量更新 |
+| `deleteById(Long)` | 按 ID 删除（逻辑删除） |
+| `deleteByIds(Collection<Long>)` | 批量删除（逻辑删除） |
+| `selectById(Long)` | 按 ID 查询 |
+| `selectOne(Wrapper<T>)` | 单条查询 |
+| `selectCount(Wrapper<T>)` | 条件计数 |
+| `selectList(Wrapper<T>)` | 列表查询 |
+| `selectPage(PageParam, Wrapper<T>)` | 分页查询 |
+
+## LambdaQueryWrapperX — 条件方法
+
+所有 `*IfPresent` 方法在值为 null/空时自动跳过：
 
 ```java
-.eqIfPresent(Entity::getField, value)       // = value (skip if null)
+.eqIfPresent(Entity::getField, value)       // = value
 .neIfPresent(Entity::getField, value)       // != value
 .likeIfPresent(Entity::getField, value)     // LIKE %value%
 .likeLeftIfPresent(Entity::getField, value) // LIKE %value
@@ -49,14 +55,14 @@ All `*IfPresent` methods skip the condition when the value is null/empty:
 .leIfPresent(Entity::getField, value)       // <= value
 .gtIfPresent(Entity::getField, value)       // > value
 .ltIfPresent(Entity::getField, value)       // < value
-.isNullIfPresent(Entity::getField, flag)    // IS NULL (when flag is true)
+.isNullIfPresent(Entity::getField, flag)    // IS NULL (flag=true)
 .orderByDesc(Entity::getField)              // ORDER BY field DESC
 .orderByAsc(Entity::getField)               // ORDER BY field ASC
 ```
 
 ## Common Query Patterns
 
-### Paginated List Query
+### 分页查询
 
 ```java
 default PageResult<XxxDO> selectPage(XxxPageReqVO reqVO) {
@@ -68,7 +74,7 @@ default PageResult<XxxDO> selectPage(XxxPageReqVO reqVO) {
 }
 ```
 
-### Batch Query by IDs
+### 按 ID 列表批量查询
 
 ```java
 default List<XxxDO> selectByIds(Collection<Long> ids) {
@@ -77,7 +83,7 @@ default List<XxxDO> selectByIds(Collection<Long> ids) {
 }
 ```
 
-### Unique Query
+### 唯一查询
 
 ```java
 default XxxDO selectByName(String name) {
@@ -85,7 +91,7 @@ default XxxDO selectByName(String name) {
 }
 ```
 
-### Count Query
+### 条件计数
 
 ```java
 default Long selectCountByStatus(Integer status) {
@@ -93,7 +99,7 @@ default Long selectCountByStatus(Integer status) {
 }
 ```
 
-### Batch Update by Condition
+### 按条件批量更新
 
 ```java
 default int updateStatusByIds(Collection<Long> ids, Integer status) {
@@ -103,21 +109,17 @@ default int updateStatusByIds(Collection<Long> ids, Integer status) {
 }
 ```
 
-### Conditional Insert (avoid duplicates)
+### 防重复插入
 
 ```java
 default int insertIfAbsent(XxxDO entity) {
     Long count = selectCount(XxxDO::getCode, entity.getCode());
-    if (count > 0) {
-        return 0;
-    }
+    if (count > 0) return 0;
     return insert(entity);
 }
 ```
 
-## Multi-Table Joins (MPJLambdaWrapperX)
-
-For queries involving multiple tables:
+## 多表联查 (MPJLambdaWrapperX)
 
 ```java
 default PageResult<XxxRespVO> selectPageWithJoin(XxxPageReqVO reqVO) {
@@ -131,41 +133,41 @@ default PageResult<XxxRespVO> selectPageWithJoin(XxxPageReqVO reqVO) {
 }
 ```
 
-## Type Handlers
+## 类型处理器
 
-The framework provides built-in type handlers in `yudao-spring-boot-starter-mybatis`:
+框架内置类型处理器（`yudao-spring-boot-starter-mybatis`）：
 
-| Type Handler | Use Case |
-|-------------|----------|
-| `IntegerListTypeHandler` | `List<Integer>` stored as JSON array |
-| `LongListTypeHandler` | `List<Long>` stored as JSON array |
-| `StringListTypeHandler` | `List<String>` stored as JSON array |
-| `JsonSetTypeHandler` | `Set<String>` stored as JSON array |
+| Type Handler | 用途 |
+|-------------|------|
+| `IntegerListTypeHandler` | `List<Integer>` 存为 JSON 数组 |
+| `LongListTypeHandler` | `List<Long>` 存为 JSON 数组 |
+| `StringListTypeHandler` | `List<String>` 存为 JSON 数组 |
+| `JsonSetTypeHandler` | `Set<String>` 存为 JSON 数组 |
 
-Usage in DO:
+DO 中使用：
 ```java
 @TableField(typeHandler = IntegerListTypeHandler.class)
 private List<Integer> categoryIds;
 ```
 
-## Pagination Setup
+## 分页
 
-Pagination is handled automatically by MyBatis-Plus interceptor. The flow:
+MyBatis-Plus 拦截器自动处理分页。流程：
 
-1. Controller receives `XxxPageReqVO extends PageParam`
-2. Passes to Service/Mapper
-3. Mapper calls `selectPage(reqVO, wrapper)` — pagination is auto-applied
-4. Returns `PageResult<XxxDO>`
+1. Controller 接收 `XxxPageReqVO extends PageParam`
+2. 传入 Service → Mapper
+3. Mapper 调用 `selectPage(reqVO, wrapper)` 自动分页
+4. 返回 `PageResult<DO>`
 
-**PageParam defaults**: `pageNo = 1`, `pageSize = 10`, max `pageSize = 200`
+**PageParam 默认值**: `pageNo = 1`, `pageSize = 10`, 最大 `pageSize = 200`
 
-## Important Rules
+## Rules
 
-1. **Always use `LambdaQueryWrapperX`** — never raw `QueryWrapper`
-2. **Use `*IfPresent` methods** — automatically skip null conditions
-3. **Default methods over XML** — simple queries don't need XML files
-4. **Logical delete** — `deleteById` sets `deleted = true`, doesn't remove row
-5. **Batch operations** — prefer `insertBatch`/`updateBatch` over loops
-6. **Join queries** — use `MPJLambdaWrapperX`, not handwritten SQL
-7. **Transaction management** — add `@Transactional` to Service methods that modify multiple tables
-8. **No SELECT \*** — always specify fields, use `selectAll()` only in join wrappers
+1. **始终用 `LambdaQueryWrapperX`** — 不用原生 `QueryWrapper`
+2. **使用 `*IfPresent` 方法** — 自动跳过 null 条件
+3. **default 方法优先于 XML** — 简单查询不写 XML
+4. **逻辑删除** — `deleteById` 设置 `deleted = true`，非物理删除
+5. **批量操作** — 优先 `insertBatch`/`updateBatch`，不用循环
+6. **联表查询** — 用 `MPJLambdaWrapperX`，不手写 SQL
+7. **事务管理** — 修改多表的 Service 方法加 `@Transactional`
+8. **不用 SELECT \*** — 明确指定字段，join 中用 `selectAll()` 除外
